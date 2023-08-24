@@ -10,13 +10,14 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     CallbackContext,
+    ConversationHandler,
 )
 import redis
 
 from read_question import get_questions_and_answers
 
 
-def start(update: Update, context: CallbackContext) -> None:
+def start(update: Update, context: CallbackContext) -> str:
     custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
     reply_markup = ReplyKeyboardMarkup(custom_keyboard)
     context.bot.send_message(
@@ -24,34 +25,41 @@ def start(update: Update, context: CallbackContext) -> None:
         text='Привет! Я бот для викторин!',
         reply_markup=reply_markup,
     )
+    return 'SELECTING_FEATURE'
 
 
-def echo(update: Update, context: CallbackContext) -> None:
-    if update.message.text == 'Новый вопрос':
-        questions_and_answers = context.bot.questions_and_answers
-        random_question = random.choice(list(questions_and_answers.keys()))
-        context.bot.redis_connect.set(update.message.chat_id, random_question)
-        update.message.reply_text(random_question)
+def handle_new_question_request(
+    update: Update, context: CallbackContext
+) -> str:
+    questions_and_answers = context.bot.questions_and_answers
+    random_question = random.choice(list(questions_and_answers.keys()))
+    context.bot.redis_connect.set(update.message.chat_id, random_question)
+    update.message.reply_text(random_question)
+
+    return 'ANSWERING_QUESTION'
+
+
+def handle_solution_attempt(update: Update, context: CallbackContext) -> str:
+    question = context.bot.redis_connect.get(update.message.chat_id)
+    if not question:
+        update.message.reply_text(update.message.text)
+    original_answer = context.bot.questions_and_answers[question]
+    answer = original_answer.replace('Ответ:\n', '')
+    if '(' in answer:
+        answer = re.sub(r'\([^)]*\)', '', answer)
+    period_position = answer.find('.')
+    if period_position != -1:
+        answer = answer[:period_position].strip()
+    answer = answer.replace('\n', ' ')
+    answer = answer.replace('  ', ' ')
+    user_answer = update.message.text
+    if answer.lower() == user_answer.lower():
+        update.message.reply_text(
+            'Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»'
+        )
+        return 'SELECTING_FEATURE'
     else:
-        question = context.bot.redis_connect.get(update.message.chat_id)
-        if not question:
-            update.message.reply_text(update.message.text)
-        original_answer = context.bot.questions_and_answers[question]
-        answer = original_answer.replace('Ответ:\n', '')
-        if '(' in answer:
-            answer = re.sub(r'\([^)]*\)', '', answer)
-        period = answer.find('.')
-        if period != -1:
-            answer = answer[:period].strip()
-        answer = answer.replace('\n', ' ')
-        answer = answer.replace('  ', ' ')
-        user_answer = update.message.text
-        if answer.lower() == user_answer.lower():
-            update.message.reply_text(
-                'Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»'
-            )
-        else:
-            update.message.reply_text('Неправильно… Попробуешь ещё раз?')
+        update.message.reply_text('Неправильно… Попробуешь ещё раз?')
 
 
 def main():
@@ -71,14 +79,26 @@ def main():
     )
 
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(
-        MessageHandler(Filters.text & ~Filters.command, echo)
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            'SELECTING_FEATURE': [
+                MessageHandler(
+                    Filters.regex('^Новый вопрос$'),
+                    handle_new_question_request,
+                ),
+            ],
+            'ANSWERING_QUESTION': [
+                MessageHandler(
+                    Filters.text & ~Filters.command, handle_solution_attempt
+                )
+            ],
+        },
+        fallbacks=[],
     )
-
+    dispatcher.add_handler(conv_handler)
     updater.start_polling()
     updater.idle()
-    1
 
 
 if __name__ == '__main__':
