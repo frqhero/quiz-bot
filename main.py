@@ -17,6 +17,18 @@ import redis
 from read_question import get_questions_and_answers
 
 
+def clean_answer(original_answer):
+    answer = original_answer.replace('Ответ:\n', '')
+    if '(' in answer:
+        answer = re.sub(r'\([^)]*\)', '', answer)
+    period_position = answer.find('.')
+    if period_position != -1:
+        answer = answer[:period_position].strip()
+    answer = answer.replace('\n', ' ')
+    answer = answer.replace('  ', ' ')
+    return answer
+
+
 def start(update: Update, context: CallbackContext) -> str:
     custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
     reply_markup = ReplyKeyboardMarkup(custom_keyboard)
@@ -41,17 +53,7 @@ def handle_new_question_request(
 
 def handle_solution_attempt(update: Update, context: CallbackContext) -> str:
     question = context.bot.redis_connect.get(update.message.chat_id)
-    if not question:
-        update.message.reply_text(update.message.text)
-    original_answer = context.bot.questions_and_answers[question]
-    answer = original_answer.replace('Ответ:\n', '')
-    if '(' in answer:
-        answer = re.sub(r'\([^)]*\)', '', answer)
-    period_position = answer.find('.')
-    if period_position != -1:
-        answer = answer[:period_position].strip()
-    answer = answer.replace('\n', ' ')
-    answer = answer.replace('  ', ' ')
+    answer = clean_answer(context.bot.questions_and_answers[question])
     user_answer = update.message.text
     if answer.lower() == user_answer.lower():
         update.message.reply_text(
@@ -60,6 +62,13 @@ def handle_solution_attempt(update: Update, context: CallbackContext) -> str:
         return 'SELECTING_FEATURE'
     else:
         update.message.reply_text('Неправильно… Попробуешь ещё раз?')
+
+
+def give_up(update: Update, context: CallbackContext) -> str:
+    question = context.bot.redis_connect.get(update.message.chat_id)
+    answer = clean_answer(context.bot.questions_and_answers[question])
+    update.message.reply_text(answer)
+    handle_new_question_request(update, context)
 
 
 def main():
@@ -89,6 +98,11 @@ def main():
                 ),
             ],
             'ANSWERING_QUESTION': [
+                MessageHandler(
+                    Filters.regex('^Новый вопрос$'),
+                    handle_new_question_request,
+                ),
+                MessageHandler(Filters.regex('^Сдаться$'), give_up),
                 MessageHandler(
                     Filters.text & ~Filters.command, handle_solution_attempt
                 )
