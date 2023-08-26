@@ -26,9 +26,8 @@ def start(vk_api, event):
 
 
 def handle_new_question_request(
-    event, vk_api, questions_and_answers, redis_connect, question_asked
+    event, vk_api, questions_and_answers, redis_connect
 ):
-    question_asked.append(True)
     random_question = random.choice(list(questions_and_answers.keys()))
     redis_connect.set(event.user_id, random_question)
     vk_api.messages.send(
@@ -61,6 +60,18 @@ def handle_solution_attempt(
         )
 
 
+def give_up(event, vk_api, questions_and_answers, redis_connect) -> str:
+    question = redis_connect.get(event.user_id)
+    answer = clean_answer(questions_and_answers[question])
+    vk_api.messages.send(
+        user_id=event.user_id,
+        message=answer,
+        random_id=random.randint(1, 1000),
+        keyboard=keyboard.get_keyboard(),
+    )
+    handle_new_question_request(event, vk_api, questions_and_answers, redis_connect)
+
+
 def main():
     load_dotenv()
 
@@ -71,7 +82,6 @@ def main():
     vk_session = vk.VkApi(token=vk_token)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
-    question_asked = []
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             if event.text == 'Новый вопрос':
@@ -80,12 +90,9 @@ def main():
                     vk_api,
                     questions_and_answers,
                     redis_connect,
-                    question_asked,
                 )
             elif event.text == 'Сдаться':
-                pass
-            elif not question_asked:
-                start(vk_api, event)
+                give_up(event, vk_api, questions_and_answers, redis_connect)
             else:
                 handle_solution_attempt(
                     event, vk_api, questions_and_answers, redis_connect
