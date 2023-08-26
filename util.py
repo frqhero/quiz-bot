@@ -5,7 +5,10 @@ import redis
 
 
 def get_questions_and_answers():
-    with open('quiz-questions/1vs1200.txt', 'r', encoding='KOI8-R') as file:
+    project_directory = os.path.dirname(__file__)
+    questions_path = 'quiz-questions/1vs1200.txt'
+    full_path = os.path.join(project_directory, questions_path)
+    with open(full_path, 'r', encoding='KOI8-R') as file:
         file_content = file.read()
     file_content_split = file_content.split('\n\n')
     questions = []
