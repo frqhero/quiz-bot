@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
 
-from misc import get_questions_and_answers, get_redis_connect
+from util import get_questions_and_answers, get_redis_connect
 
 
 def handle_new_question_request(questions_and_answers):

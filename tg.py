@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 import redis
 
-from misc import get_questions_and_answers, get_redis_connect
+from util import get_questions_and_answers, get_redis_connect
 
 
 def clean_answer(original_answer):
