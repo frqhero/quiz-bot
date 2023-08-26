@@ -1,6 +1,5 @@
 import os
 import random
-import re
 
 from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup
@@ -12,21 +11,8 @@ from telegram.ext import (
     CallbackContext,
     ConversationHandler,
 )
-import redis
 
-from util import get_questions_and_answers, get_redis_connect
-
-
-def clean_answer(original_answer):
-    answer = original_answer.replace('Ответ:\n', '')
-    if '(' in answer:
-        answer = re.sub(r'\([^)]*\)', '', answer)
-    period_position = answer.find('.')
-    if period_position != -1:
-        answer = answer[:period_position].strip()
-    answer = answer.replace('\n', ' ')
-    answer = answer.replace('  ', ' ')
-    return answer
+from util import get_questions_and_answers, get_redis_connect, clean_answer
 
 
 def start(update: Update, context: CallbackContext) -> str:
@@ -99,7 +85,7 @@ def main():
                 MessageHandler(Filters.regex('^Сдаться$'), give_up),
                 MessageHandler(
                     Filters.text & ~Filters.command, handle_solution_attempt
-                )
+                ),
             ],
         },
         fallbacks=[],

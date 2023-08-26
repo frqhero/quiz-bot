@@ -1,4 +1,5 @@
 import os
+import re
 
 import redis
 
@@ -27,3 +28,15 @@ def get_redis_connect():
         decode_responses=True,
     )
     return redis_connect
+
+
+def clean_answer(original_answer):
+    answer = original_answer.replace('Ответ:\n', '')
+    if '(' in answer:
+        answer = re.sub(r'\([^)]*\)', '', answer)
+    period_position = answer.find('.')
+    if period_position != -1:
+        answer = answer[:period_position].strip()
+    answer = answer.replace('\n', ' ')
+    answer = answer.replace('  ', ' ')
+    return answer
