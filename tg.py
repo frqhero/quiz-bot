@@ -1,6 +1,7 @@
 import os
 import random
 
+import redis
 from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
@@ -65,7 +66,13 @@ def main():
     updater = Updater(telegram_token)
     bot = updater.bot
     bot.questions_and_answers = get_questions_and_answers()
-    bot.redis_connect = get_redis_connect()
+    redis_password = os.getenv('REDIS_PASSWORD')
+    bot.redis_connect = redis.Redis(
+        host='redis-14788.c264.ap-south-1-1.ec2.cloud.redislabs.com',
+        port=14788,
+        password=redis_password,
+        decode_responses=True,
+    )
 
     dispatcher = updater.dispatcher
     conv_handler = ConversationHandler(

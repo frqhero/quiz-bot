@@ -1,6 +1,7 @@
 import os
 import random
 
+import redis
 import vk_api as vk
 from dotenv import load_dotenv
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -76,7 +77,13 @@ def main():
     load_dotenv()
 
     questions_and_answers = get_questions_and_answers()
-    redis_connect = get_redis_connect()
+    redis_password = os.getenv('REDIS_PASSWORD')
+    redis_connect = redis.Redis(
+        host='redis-14788.c264.ap-south-1-1.ec2.cloud.redislabs.com',
+        port=14788,
+        password=redis_password,
+        decode_responses=True,
+    )
 
     vk_token = os.getenv('VK_TOKEN')
     vk_session = vk.VkApi(token=vk_token)
