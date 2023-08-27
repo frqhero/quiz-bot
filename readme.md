@@ -13,8 +13,10 @@ This code contains two bots, one for Telegram and one for VK. You are provided w
 
 ## Required env vars
 `TELEGRAM_TOKEN`  
-`REDIS_PASSWORD`  
 `VK_TOKEN`  
+`REDIS_HOST`  
+`REDIS_PORT`  
+`REDIS_PASSWORD`  
 
 ## Deployed bots
 [tg_bot](https://t.me/frqhero_quiz_bot)  

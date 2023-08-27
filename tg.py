@@ -35,14 +35,14 @@ def handle_new_question_request(
 ) -> str:
     questions_and_answers = context.bot.questions_and_answers
     random_question = random.choice(list(questions_and_answers.keys()))
-    context.bot.redis_connect.set(update.message.chat_id, random_question)
+    context.bot.redis_connection.set(update.message.chat_id, random_question)
     update.message.reply_text(random_question)
 
     return 'ANSWERING_QUESTION'
 
 
 def handle_solution_attempt(update: Update, context: CallbackContext) -> str:
-    question = context.bot.redis_connect.get(update.message.chat_id)
+    question = context.bot.redis_connection.get(update.message.chat_id)
     answer = clean_answer(context.bot.questions_and_answers[question])
     user_answer = update.message.text
     if answer.lower() == user_answer.lower():
@@ -55,7 +55,7 @@ def handle_solution_attempt(update: Update, context: CallbackContext) -> str:
 
 
 def give_up(update: Update, context: CallbackContext) -> str:
-    question = context.bot.redis_connect.get(update.message.chat_id)
+    question = context.bot.redis_connection.get(update.message.chat_id)
     answer = clean_answer(context.bot.questions_and_answers[question])
     update.message.reply_text(answer)
     handle_new_question_request(update, context)
@@ -69,10 +69,12 @@ def main():
     updater = Updater(telegram_token)
     bot = updater.bot
     bot.questions_and_answers = get_questions_and_answers()
+    redis_host = os.getenv('REDIS_HOST')
+    redis_port = os.getenv('REDIS_PORT')
     redis_password = os.getenv('REDIS_PASSWORD')
-    bot.redis_connect = redis.Redis(
-        host='redis-14788.c264.ap-south-1-1.ec2.cloud.redislabs.com',
-        port=14788,
+    redis_connection = redis.Redis(
+        host=redis_host,
+        port=redis_port,
         password=redis_password,
         decode_responses=True,
     )

@@ -1,4 +1,3 @@
-import argparse
 import os
 import random
 
@@ -31,10 +30,10 @@ def start(vk_api, event):
 
 
 def handle_new_question_request(
-    event, vk_api, questions_and_answers, redis_connect
+    event, vk_api, questions_and_answers, redis_connection
 ):
     random_question = random.choice(list(questions_and_answers.keys()))
-    redis_connect.set(event.user_id, random_question)
+    redis_connection.set(event.user_id, random_question)
     vk_api.messages.send(
         user_id=event.user_id,
         message=random_question,
@@ -44,9 +43,9 @@ def handle_new_question_request(
 
 
 def handle_solution_attempt(
-    event, vk_api, questions_and_answers, redis_connect
+    event, vk_api, questions_and_answers, redis_connection
 ):
-    question = redis_connect.get(event.user_id)
+    question = redis_connection.get(event.user_id)
     answer = clean_answer(questions_and_answers[question])
     user_answer = event.text
     if answer.lower() == user_answer.lower():
@@ -65,8 +64,8 @@ def handle_solution_attempt(
         )
 
 
-def give_up(event, vk_api, questions_and_answers, redis_connect) -> str:
-    question = redis_connect.get(event.user_id)
+def give_up(event, vk_api, questions_and_answers, redis_connection) -> str:
+    question = redis_connection.get(event.user_id)
     answer = clean_answer(questions_and_answers[question])
     vk_api.messages.send(
         user_id=event.user_id,
@@ -75,7 +74,7 @@ def give_up(event, vk_api, questions_and_answers, redis_connect) -> str:
         keyboard=KEYBOARD.get_keyboard(),
     )
     handle_new_question_request(
-        event, vk_api, questions_and_answers, redis_connect
+        event, vk_api, questions_and_answers, redis_connection
     )
 
 
@@ -83,10 +82,12 @@ def main():
     load_dotenv()
 
     questions_and_answers = get_questions_and_answers()
+    redis_host = os.getenv('REDIS_HOST')
+    redis_port = os.getenv('REDIS_PORT')
     redis_password = os.getenv('REDIS_PASSWORD')
-    redis_connect = redis.Redis(
-        host='redis-14788.c264.ap-south-1-1.ec2.cloud.redislabs.com',
-        port=14788,
+    redis_connection = redis.Redis(
+        host=redis_host,
+        port=redis_port,
         password=redis_password,
         decode_responses=True,
     )
@@ -102,13 +103,13 @@ def main():
                     event,
                     vk_api,
                     questions_and_answers,
-                    redis_connect,
+                    redis_connection,
                 )
             elif event.text == 'Сдаться':
-                give_up(event, vk_api, questions_and_answers, redis_connect)
+                give_up(event, vk_api, questions_and_answers, redis_connection)
             else:
                 handle_solution_attempt(
-                    event, vk_api, questions_and_answers, redis_connect
+                    event, vk_api, questions_and_answers, redis_connection
                 )
 
 
