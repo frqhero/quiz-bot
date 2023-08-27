@@ -14,11 +14,11 @@ from question_and_answer_operations import (
 )
 
 
-keyboard = VkKeyboard(one_time=True)
-keyboard.add_button('Новый вопрос', color=VkKeyboardColor.POSITIVE)
-keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
-keyboard.add_line()
-keyboard.add_button('Мой счёт', color=VkKeyboardColor.PRIMARY)
+KEYBOARD = VkKeyboard(one_time=True)
+KEYBOARD.add_button('Новый вопрос', color=VkKeyboardColor.POSITIVE)
+KEYBOARD.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
+KEYBOARD.add_line()
+KEYBOARD.add_button('Мой счёт', color=VkKeyboardColor.PRIMARY)
 
 
 def start(vk_api, event):
@@ -26,7 +26,7 @@ def start(vk_api, event):
         user_id=event.user_id,
         message='Привет! Я бот для викторин!',
         random_id=random.randint(1, 1000),
-        keyboard=keyboard.get_keyboard(),
+        keyboard=KEYBOARD.get_keyboard(),
     )
 
 
@@ -39,7 +39,7 @@ def handle_new_question_request(
         user_id=event.user_id,
         message=random_question,
         random_id=random.randint(1, 1000),
-        keyboard=keyboard.get_keyboard(),
+        keyboard=KEYBOARD.get_keyboard(),
     )
 
 
@@ -54,14 +54,14 @@ def handle_solution_attempt(
             user_id=event.user_id,
             message='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»',
             random_id=random.randint(1, 1000),
-            keyboard=keyboard.get_keyboard(),
+            keyboard=KEYBOARD.get_keyboard(),
         )
     else:
         vk_api.messages.send(
             user_id=event.user_id,
             message='Неправильно… Попробуешь ещё раз?',
             random_id=random.randint(1, 1000),
-            keyboard=keyboard.get_keyboard(),
+            keyboard=KEYBOARD.get_keyboard(),
         )
 
 
@@ -72,7 +72,7 @@ def give_up(event, vk_api, questions_and_answers, redis_connect) -> str:
         user_id=event.user_id,
         message=answer,
         random_id=random.randint(1, 1000),
-        keyboard=keyboard.get_keyboard(),
+        keyboard=KEYBOARD.get_keyboard(),
     )
     handle_new_question_request(
         event, vk_api, questions_and_answers, redis_connect
