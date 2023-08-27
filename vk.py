@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 
@@ -7,7 +8,7 @@ from dotenv import load_dotenv
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
 
-from util import get_questions_and_answers, get_redis_connect, clean_answer
+from util import get_questions_and_answers, clean_answer
 
 
 keyboard = VkKeyboard(one_time=True)
