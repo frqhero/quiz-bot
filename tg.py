@@ -13,7 +13,10 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-from util import get_questions_and_answers, clean_answer
+from question_and_answer_operations import (
+    get_questions_and_answers,
+    clean_answer,
+)
 
 
 def start(update: Update, context: CallbackContext) -> str:

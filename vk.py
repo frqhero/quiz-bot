@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
 
-from util import get_questions_and_answers, clean_answer
+from question_and_answer_operations import (
+    get_questions_and_answers,
+    clean_answer,
+)
 
 
 keyboard = VkKeyboard(one_time=True)
@@ -71,7 +74,9 @@ def give_up(event, vk_api, questions_and_answers, redis_connect) -> str:
         random_id=random.randint(1, 1000),
         keyboard=keyboard.get_keyboard(),
     )
-    handle_new_question_request(event, vk_api, questions_and_answers, redis_connect)
+    handle_new_question_request(
+        event, vk_api, questions_and_answers, redis_connect
+    )
 
 
 def main():
